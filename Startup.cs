@@ -12,6 +12,11 @@ using MvcMovie.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Identity;
+using MvcMovie.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using MvcMovie.Services;
 
 namespace MvcMovie
 {
@@ -31,6 +36,29 @@ namespace MvcMovie
 
             services.AddDbContext<MvcMovieContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("MvcMovieContext")));
+
+            //services.AddIdentity<IdentityUser, IdentityRole>()
+            //    // services.AddDefaultIdentity<IdentityUser>() 
+            //    .AddEntityFrameworkStores<ApplicationDbContext>()
+            //    .AddDefaultTokenProviders();
+
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+                .AddRazorPagesOptions(options =>
+                {
+                    options.Conventions.AuthorizeAreaFolder("Identity", "/Account/Manage");
+                    options.Conventions.AuthorizeAreaPage("Identity", "/Account/Logout");
+                });
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = $"/Identity/Account/Login";
+                options.LogoutPath = $"/Identity/Account/Logout";
+                options.AccessDeniedPath = $"/Identity/Account/AccessDenied";
+            });
+
+            // using Microsoft.AspNetCore.Identity.UI.Services;
+            services.AddSingleton<IEmailSender, EmailSender>();
+            services.AddHttpContextAccessor();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,6 +79,7 @@ namespace MvcMovie
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
@@ -58,6 +87,7 @@ namespace MvcMovie
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
             });
 
             var defaultCulture = new CultureInfo("es-MX");
